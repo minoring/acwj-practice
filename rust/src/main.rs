@@ -1,9 +1,16 @@
+mod defs;
+
+use defs::{Token, TokenType};
 use std::env;
 use std::fs::File;
 use std::process::exit;
 
 pub static mut LINE: i32 = 1;
 pub static mut PUTBACK: char = '\n';
+pub static mut TOKEN: Token = Token {
+    token: TokenType::T_EOF,
+    intvalue: 0,
+};
 
 unsafe fn init() {
     LINE = 1;
@@ -28,7 +35,7 @@ fn main() -> std::io::Result<()> {
         init();
     }
 
-    let file = File::open(&argv[1])?;
+    let infile = File::open(&argv[1])?;
 
     Ok(())
 }
