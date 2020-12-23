@@ -17,4 +17,11 @@ multiplicative_expression:
 
 number: T_INTLIT
         ;
+
+statements: statement
+     | statement statements
+     ;
+
+statement: 'print' expression ';'
+     ;
 ```
