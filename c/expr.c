@@ -6,41 +6,51 @@
 // AST node representing it.
 static struct ASTnode *primary(void) {
     struct ASTnode *n;
-
+    int id;
     // For an INTLIT token, make a leaf AST node for it
     // and scan in the next token. Otherwise, a syntax error
     // for any other token type.
     switch (Token.token) {
-        case T_INTLIT:
-            n = mkastleaf(A_INTLIT, Token.intvalue);
-            scan(&Token);
-            return (n);
-        default:
-            fprintf(stderr, "syntax error on line %d\n", Line);
-            exit(1);
+    case T_INTLIT:
+        n = mkastleaf(A_INTLIT, Token.intvalue);
+        break;
+    case T_IDENT:
+        // Check that this identifier exists.
+        id = findglob(Text);
+        if (id == -1) {
+            fatals("Unknown variable", Text);
+        }
+        // Make a leaf AST node for it.
+        n = mkastleaf(A_IDENT, id);
+        break;
+    default:
+        fprintf(stderr, "syntax error on line %d\n", Line);
+        exit(1);
     }
+    scan(&Token);
+    return (n);
 }
 
 // Convert a token into an AST operation.
 int arithop(int tok) {
     switch (tok) {
-        case T_PLUS:
-            return (A_ADD);
-        case T_MINUS:
-            return (A_SUBTRACT);
-        case T_STAR:
-            return (A_MULTIPLY);
-        case T_SLASH:
-            return (A_DIVIDE);
-        default:
-            fprintf(stderr, "unknown token in arithop() on line %d\n", Line);
-            exit(1);
+    case T_PLUS:
+        return (A_ADD);
+    case T_MINUS:
+        return (A_SUBTRACT);
+    case T_STAR:
+        return (A_MULTIPLY);
+    case T_SLASH:
+        return (A_DIVIDE);
+    default:
+        fprintf(stderr, "unknown token in arithop() on line %d\n", Line);
+        exit(1);
     }
 }
 
 // Operaotr precedence for each token
 //                      EOF + - * / INTLIT
-static int OpPrec[] = { 0, 10, 10, 20, 20, 0 };
+static int OpPrec[] = {0, 10, 10, 20, 20, 0};
 
 // Check that we have a binary operator and
 // return its precedence.
