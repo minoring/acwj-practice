@@ -23,7 +23,7 @@ char *tokstr[] = { "+", "-", "*", "/", "intlit" };
 // Main program: check arguments and print a usage
 // if we don't have an argument.
 int main(int argc, char *argv[]) {
-    struct ASTnode *n;
+    struct ASTnode *tree;
 
     if (argc != 2) {
         usage(argv[0]);
@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) {
 
     scan(&Token); // Get the first token from the input
     genpreamble();
-    statements();
+    tree = compound_statement();
+    genAST(tree, NOREG, 0);
     genpostamble();
     fclose(Outfile);
     exit(0);

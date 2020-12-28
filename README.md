@@ -1,4 +1,4 @@
-## Grammar
+## BNF Grammar
 ```
 expression: additive_expression
     ;
@@ -18,13 +18,34 @@ multiplicative_expression:
 number: T_INTLIT
         ;
 
-statements: statement
-     | statement statements
+statement: print_statement
+     |     declaration
+     |     assignment_statement
+     |     if_statement
      ;
 
-statement: 'print' expression ';'
-     |     'int'   identifier ';'
-     |     identifier '=' expression ';'
+print_statement: 'print' expression ';'
+     ;
+
+declaration: 'int' identifier ';'
+     ;
+
+assignment_statement: identifier '=' expression ';'
+     ;
+
+if_statement: if_head
+     |        if_head 'else' compound_statement
+     ;
+
+if_head: 'if' '(' true_false_expression ')' compound_statement
+     ;
+
+statements: statement
+     |      statement statements
+     ;
+
+compound_statement: '{' '}' // empty, i.e. no statement
+     |      '{' statements '}'
      ;
 
 identifier: T_IDENT

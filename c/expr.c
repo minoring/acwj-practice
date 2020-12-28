@@ -7,9 +7,6 @@
 static struct ASTnode *primary(void) {
     struct ASTnode *n;
     int id;
-    // For an INTLIT token, make a leaf AST node for it
-    // and scan in the next token. Otherwise, a syntax error
-    // for any other token type.
     switch (Token.token) {
     case T_INTLIT:
         n = mkastleaf(A_INTLIT, Token.intvalue);
@@ -24,16 +21,15 @@ static struct ASTnode *primary(void) {
         n = mkastleaf(A_IDENT, id);
         break;
     default:
-        fprintf(stderr, "syntax error on line %d\n", Line);
-        exit(1);
+        fatald("Syntax error, token", Token.token);
     }
     scan(&Token);
     return (n);
 }
 
 // Convert a binary operator token into an AST operation.
-// We rely on a 1:1 mapping from token to AST operation.
-int arithop(int tokentype) {
+// We rely on a 1:1 mapping from token to AST operation
+static int arithop(int tokentype) {
     if (tokentype > T_EOF && tokentype < T_INTLIT) {
         return (tokentype);
     }
@@ -55,28 +51,24 @@ static int OpPrec[] = {
 static int op_precedence(int tokentype) {
     int prec = OpPrec[tokentype];
     if (prec == 0) {
-        fprintf(stderr, "syntax error on line %d, token %d\n", Line, tokentype);
-        exit(1);
+        fatald("Syntax error, token", tokentype);
     }
     return (prec);
 }
 
-// Return an AST tree whose root it a binary operator
-// Parameter ptp is the previous token's precedence
+// Return an AST tree whose root is a binary operator.
+// Parameter ptp is the previous token's precedence.
 struct ASTnode *binexpr(int ptp) {
-    struct ASTnode *n, *left, *right;
+    struct ASTnode *left, *right;
     int tokentype;
-
-    // Get the integer literal on the left.
+    // Get the primary tree on the left.
     // Fetch the next token at the same time.
     left = primary();
-
-    // If we hit a semicolon, return just the left node
+    // If we hit a semicolon or ')', return just the left node
     tokentype = Token.token;
-    if (tokentype == T_SEMI) {
+    if (tokentype == T_SEMI || tokentype == T_RPAREN) {
         return (left);
     }
-
     // While the precedence of this token is
     // more than that of the previous token precedence
     while (op_precedence(tokentype) > ptp) {
@@ -89,16 +81,14 @@ struct ASTnode *binexpr(int ptp) {
 
         // Join that sub-tree with ours. Convert the token
         // into an AST operation at the same time.
-        left = mkastnode(arithop(tokentype), left, right, 0);
-
+        left = mkastnode(arithop(tokentype), left, NULL, right, 0);
         // Update the details of the current token.
-        // If we hit a semicolon, return just the left node
+        // If we hit a semicolon or ')', return just the left node
         tokentype = Token.token;
-        if (tokentype == T_SEMI) {
+        if (tokentype == T_SEMI || tokentype == T_RPAREN) {
             return (left);
         }
     }
-
     // Return the tree we have when the precedence
     // is the same or lower
     return (left);
