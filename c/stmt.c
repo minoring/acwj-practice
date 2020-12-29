@@ -71,6 +71,27 @@ static struct ASTnode *assignment_statement(void) {
     return tree;
 }
 
+// Parse a WHILE statement
+// and return its AST.
+struct ASTnode *while_statement(void) {
+    struct ASTnode *condAST, *bodyAST;
+    // Ensure we have 'while' '('
+    match(T_WHILE, "while");
+    lparen();
+    // Parse the following expression
+    // and the ')' following. Ensure
+    // the tree's operation is a comparison.
+    condAST = binexpr(0);
+    if (condAST->op < A_EQ || condAST->op > A_GE) {
+        fatal("Bad comparison operator");
+    }
+    rparen();
+    // Get the AST for the compound statement.
+    bodyAST = compound_statement();
+    // Build and return the AST for this statement.
+    return (mkastnode(A_WHILE, condAST, NULL, bodyAST, 0));
+}
+
 // Parse a compound statement
 // and return its AST
 struct ASTnode *compound_statement(void) {
@@ -93,6 +114,9 @@ struct ASTnode *compound_statement(void) {
             break;
         case T_IF:
             tree = if_statement();
+            break;
+        case T_WHILE:
+            tree = while_statement();
             break;
         case T_RBRACE:
             // When we hit a right curly bracket,

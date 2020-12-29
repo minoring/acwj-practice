@@ -107,6 +107,11 @@ static int keyword(char *s) {
             return (T_PRINT);
         }
         break;
+    case 'w':
+        if (!strcmp(s, "while")) {
+            return (T_WHILE);
+        }
+        break;
     }
     return (0);
 }

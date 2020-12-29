@@ -16,7 +16,7 @@ enum {
     T_INTLIT, T_SEMI, T_ASSIGN, T_IDENT,
     T_LBRACE, T_RBRACE, T_LPAREN, T_RPAREN,
     // Keywords
-    T_PRINT, T_INT, T_IF, T_ELSE
+    T_PRINT, T_INT, T_IF, T_ELSE, T_WHILE
 };
 
 // Token structure
@@ -33,7 +33,7 @@ enum {
     A_LT, A_GT, A_LE, A_GE,
     A_INTLIT,
     A_IDENT, A_LVIDENT, A_ASSIGN,
-    A_PRINT, A_GLUE, A_IF
+    A_PRINT, A_GLUE, A_IF, A_WHILE
 };
 
 // Abstract Syntax Tree structure

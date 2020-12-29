@@ -48,6 +48,9 @@ compound_statement: '{' '}' // empty, i.e. no statement
      |      '{' statements '}'
      ;
 
+while_statement: 'while' '(' true_false_expression ')' compound_statement
+     ;
+
 identifier: T_IDENT
      ;
 ```
