@@ -5,6 +5,9 @@ comp1: $(SRCS)
 clean:
 	rm -f comp1 *.o *.s out
 
-test: comp1 ../input06
-	./comp1 ../input06
+test: comp1 tests/runtests.sh
+		(cd tests; chmod +x runtests.sh; ./runtests.sh)
+
+test6: comp1 tests/input06
+	./comp1 tests/input06
 
