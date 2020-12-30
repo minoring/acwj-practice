@@ -8,6 +8,6 @@ clean:
 test: comp1 tests/runtests.sh
 		(cd tests; chmod +x runtests.sh; ./runtests.sh)
 
-test6: comp1 tests/input06
-	./comp1 tests/input06
+test7: comp1 tests/input07
+	./comp1 tests/input07
 
