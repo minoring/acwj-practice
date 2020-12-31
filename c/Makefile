@@ -1,4 +1,4 @@
-SRCS = cg.c decl.c expr.c gen.c main.c misc.c scan.c stmt.c sym.c tree.c interp.c
+SRCS = cg.c decl.c expr.c gen.c main.c misc.c scan.c stmt.c sym.c tree.c interp.c types.c
 comp1: $(SRCS)
 	cc -o comp1 -g $(SRCS)
 
@@ -8,6 +8,6 @@ clean:
 test: comp1 tests/runtests.sh
 		(cd tests; chmod +x runtests.sh; ./runtests.sh)
 
-test9: comp1 tests/input09
-	./comp1 tests/input09
+test10: comp1 tests/input10
+	./comp1 tests/input10
 

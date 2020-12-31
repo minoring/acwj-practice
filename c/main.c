@@ -17,9 +17,6 @@ static void usage(char *prog) {
     exit(1);
 }
 
-// List of printable tokens
-char *tokstr[] = { "+", "-", "*", "/", "intlit" };
-
 // Main program: check arguments and print a usage
 // if we don't have an argument.
 int main(int argc, char *argv[]) {

@@ -70,8 +70,7 @@ static int scanident(int c, char *buf, int lim) {
         // Error if we hit the identifier length limit,
         // else append to buf[] and get next character
         if (lim - 1 == i) {
-            printf("identifier too long on line %d\n", Line);
-            exit(1);
+            fatal("Identifier too long");
         } else if (i < lim - 1) {
             buf[i++] = c;
         }
@@ -89,6 +88,11 @@ static int scanident(int c, char *buf, int lim) {
 // to waste time strcmp()ing against all the keywords.
 static int keyword(char *s) {
     switch (*s) {
+    case 'c':
+        if (!strcmp(s, "char")) {
+            return (T_CHAR);
+        }
+        break;
     case 'e':
         if (!strcmp(s, "else")) {
             return (T_ELSE);
