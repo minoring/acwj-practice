@@ -93,6 +93,12 @@ int genAST(struct ASTnode *n, int reg, int parentASTop) {
         genAST(n->right, NOREG, n->op);
         genfreeregs();
         return (NOREG);
+    case A_FUNCTION:
+        // Generate the function's preamble before the code.
+        cgfuncpreamble(Gsym[n->v.id].name);
+        genAST(n->left, NOREG, n->op);
+        cgfuncpostamble();
+        return (NOREG);
     }
     // Get the left and right sub-tree values
     if (n->left) {
@@ -147,10 +153,6 @@ int genAST(struct ASTnode *n, int reg, int parentASTop) {
 
 void genpreamble() {
     cgpreamble();
-}
-
-void genpostamble() {
-    cgpostamble();
 }
 
 void genfreeregs() {

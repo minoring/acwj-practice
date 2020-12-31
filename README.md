@@ -63,6 +63,9 @@ preop_statement: statement
 postop_statement: statement
      ;
 
+function_declaration: 'void' identifier '(' ')' compound_statement
+     ;
+
 identifier: T_IDENT
      ;
 ```

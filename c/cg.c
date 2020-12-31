@@ -39,6 +39,7 @@ static void free_register(int reg) {
 // Print out the assembly preamble
 void cgpreamble() {
     freeall_registers();
+     // Only prints out the code for printint()
     fputs("\t.text\n"
           ".LC0:\n"
           "\t.string\t\"%d\\n\"\n"
@@ -55,20 +56,22 @@ void cgpreamble() {
           "\tnop\n"
           "\tleave\n"
           "\tret\n"
-          "\n"
-          "\t.globl\t_main\n"
-          "_main:\n"
-          "\tpushq\t%rbp\n"
-          "\tmovq	%rsp, %rbp\n",
+          "\n",
           Outfile);
 }
 
-// Printout the assembly postamble
-void cgpostamble() {
-    fputs("\tmovl $0, %eax\n"
-          "\tpopq %rbp\n"
-          "\tret\n",
-          Outfile);
+// Print out a function preamble.
+void cgfuncpreamble(char *name) {
+    fprintf(Outfile,
+            "\t.text\n"
+            "\t.global\t_%s\n"
+            "_%s:\n" "\tpushq\t%%rbp\n"
+            "\tmovq\t%%rsp, %%rbp\n", name, name);
+}
+
+// Print out a funciton postamble
+void cgfuncpostamble() {
+    fputs("\tmovl $0, %eax\n" "\tpopq   %rbp\n" "\tret\n", Outfile);
 }
 
 // Load an integer literal value into a register.

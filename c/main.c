@@ -44,9 +44,13 @@ int main(int argc, char *argv[]) {
 
     scan(&Token); // Get the first token from the input
     genpreamble();
-    tree = compound_statement();
-    genAST(tree, NOREG, 0);
-    genpostamble();
+    while (1) {
+        tree = function_declaration();
+        genAST(tree, NOREG, 0);
+        if (Token.token == T_EOF) {
+            break;
+        }
+    }
     fclose(Outfile);
     exit(0);
 }

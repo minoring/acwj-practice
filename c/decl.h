@@ -10,7 +10,6 @@ struct ASTnode *mkastunary(int op, struct ASTnode *left, int intvalue);
 // gen.c
 int genAST(struct ASTnode *n, int reg, int parentASTop);
 void genpreamble();
-void genpostamble();
 void genfreeregs();
 void genprintint(int reg);
 void genglobsym(char *s);
@@ -18,7 +17,8 @@ void genglobsym(char *s);
 // cg.c
 void freeall_registers(void);
 void cgpreamble();
-void cgpostamble();
+void cgfuncpreamble(char *name);
+void cgfuncpostamble();
 int cgloadint(int value);
 int cgloadglob(char *identifier);
 int cgadd(int r1, int r2);
@@ -58,6 +58,7 @@ int addglob(char *name);
 
 // decl.c
 void var_declaration(void);
+struct ASTnode *function_declaration(void);
 
 // interp.c
 int interpretAST(struct ASTnode *n);
