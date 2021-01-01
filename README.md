@@ -66,7 +66,7 @@ preop_statement: statement
 postop_statement: statement
      ;
 
-function_declaration: 'void' identifier '(' ')' compound_statement
+function_declaration: type identifier '(' ')' compound_statement
      ;
 
 function_call: identifier '(' expression ')'
