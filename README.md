@@ -23,6 +23,9 @@ statement: print_statement
      |     declaration
      |     assignment_statement
      |     if_statement
+     |     while_statement
+     |     for_statement
+     |     return statement
      ;
 
 print_statement: 'print' expression ';'
@@ -64,6 +67,12 @@ postop_statement: statement
      ;
 
 function_declaration: 'void' identifier '(' ')' compound_statement
+     ;
+
+function_call: identifier '(' expression ')'
+     ;
+
+return_statement: 'return' '(' expression ')'
      ;
 
 identifier: T_IDENT

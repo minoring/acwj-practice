@@ -33,4 +33,3 @@ struct ASTnode *mkastleaf(int op, int type, int intvalue) {
 struct ASTnode *mkastunary(int op, int type, struct ASTnode *left, int intvalue) {
     return (mkastnode(op, type, left, NULL, NULL, intvalue));
 }
-
