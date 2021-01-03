@@ -87,6 +87,9 @@ int cgloadglob(int id) {
                 reglist[r]);
         break;
     case P_LONG:
+    case P_CHARPTR:
+    case P_INTPTR:
+    case P_LONGPTR:
         fprintf(Outfile, "\tmovq\t%s(\%%rip), %s\n", Gsym[id].name,
                 reglist[r]);
         break;
@@ -159,23 +162,26 @@ int cgstorglob(int r, int id) {
       fprintf(Outfile, "\tmovl\t%s, %s(\%%rip)\n", dreglist[r], Gsym[id].name);
       break;
   case P_LONG:
+  case P_CHARPTR:
+  case P_INTPTR:
+  case P_LONGPTR:
       fprintf(Outfile, "\tmovq\t%s, %s(\%%rip)\n", reglist[r], Gsym[id].name);
       break;
   default:
-      fatald("Bad type in cgloadglob:", Gsym[id].type);
+      fatald("Bad type in cgstorglob:", Gsym[id].type);
   }
   return (r);
 }
 
 // Array of types sizes in P_XXX order.
 // 0 means no size.
-static int psize[] = { 0, 0, 1, 4, 8 };
+static int psize[] = { 0, 0, 1, 4, 8, 8, 8, 8 };
 
 // Given a P_XXX type value, return the
 // size of a primitive type in bytes.
 int cgprimsize(int type) {
     // Check the type is valid.
-    if (type < P_NONE || type > P_LONG) {
+    if (type < P_NONE || type > P_LONGPTR) {
         fatal("Bad type in cgprimsize()");
     }
     return (psize[type]);
@@ -258,4 +264,30 @@ void cgreturn(int reg, int id) {
         fatald("Bad function type in cgreturn:", Gsym[id].type);
     }
     cgjump(Gsym[id].endlabel);
+}
+
+// Generate code to load the address of a global
+// identifier into a variable. Return a new register.
+int cgaddress(int id) {
+    int r = alloc_register();
+
+    fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", Gsym[id].name, reglist[r]);
+    return (r);
+}
+
+// Dereference a pointer to get the value it
+// pointing at into the same register.
+int cgderef(int r, int type) {
+    switch (type) {
+    case P_CHARPTR:
+        fprintf(Outfile, "\tmovzbq\t(%s), %s\n", reglist[r], reglist[r]);
+        break;
+    case P_INTPTR:
+        fprintf(Outfile, "\tmovq\t(%s), %s\n", reglist[r], reglist[r]);
+        break;
+    case P_LONGPTR:
+        fprintf(Outfile, "\tmovq\t(%s), %s\n", reglist[r], reglist[r]);
+        break;
+    }
+    return (r);
 }

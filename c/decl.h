@@ -38,6 +38,8 @@ void cglabel(int l);
 void cgjump(int l);
 int cgwiden(int r, int oldtype, int newtype);
 void cgreturn(int reg, int id);
+int cgaddress(int id);
+int cgderef(int r, int type);
 
 // expr.c
 struct ASTnode *funccall(void);
@@ -69,3 +71,5 @@ struct ASTnode *function_declaration(void);
 
 // types.c
 int type_compatible(int *left, int *right, int onlyright);
+int pointer_to(int type);
+int value_at(int type);
