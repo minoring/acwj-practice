@@ -44,6 +44,9 @@ void cgpreamble() {
     fputs("\t.text\n", Outfile);
 }
 
+// Nothing to do
+void cgpostamble() {}
+
 // Print out a function preamble.
 void cgfuncpreamble(int id) {
     char *name = Gsym[id].name;

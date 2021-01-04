@@ -36,9 +36,6 @@ statement: print_statement
 print_statement: 'print' expression ';'
      ;
 
-declaration: 'int' identifier ';'
-     ;
-
 assignment_statement: identifier '=' expression ';'
      ;
 
@@ -71,13 +68,35 @@ preop_statement: statement
 postop_statement: statement
      ;
 
-function_declaration: type identifier '(' ')' compound_statement
-     ;
-
 function_call: identifier '(' expression ')'
      ;
 
 return_statement: 'return' '(' expression ')'
+     ;
+
+global_declarations: global_declarations
+     | global_declaration global_declarations
+     ;
+
+global_declaration: function_declaration | var_declaration
+     ;
+
+function_declaration: type identifier '(' ')' compound_statement
+     ;
+
+var_declaration: type identifier_list ';'
+     ;
+
+type: type_keyword opt_pointer
+     ;
+
+type_keyword: 'void' | 'char' | 'int' | 'long'
+     ;
+
+opt_pointer: <empty> | '*' opt_pointer
+     ;
+
+identifier_list: identifier | identifier ',' identifier_list
      ;
 
 identifier: T_IDENT
