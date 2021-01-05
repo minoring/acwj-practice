@@ -5,6 +5,57 @@
 // Prototypes
 static struct ASTnode *single_statement(void);
 
+static struct ASTnode *print_statement(void) {
+    struct ASTnode *tree;
+    // Match a 'print' as the first token
+    match(T_PRINT, "print");
+    // Parse the following expression
+    tree = binexpr(0);
+    // Ensure the two types are compatible.
+    tree = modify_type(tree, P_INT, 0);
+    if (tree == NULL) {
+        fatal("Incompatible type to print");
+    }
+    // Make an print AST tree
+    tree = mkastunary(A_PRINT, P_NONE, tree, 0);
+    // Return the AST.
+    return (tree);
+}
+
+static struct ASTnode *assignment_statement(void) {
+    struct ASTnode *left, *right, *tree;
+    int id;
+    // Ensure we have an identifier
+    ident();
+    // This could be a variable or a function call.
+    // If next token is '(', it is a function call.
+    if (Token.token == T_LPAREN) {
+        return (funccall());
+    }
+    // Not a function call, on with an assignment then!
+    // Check the identifier has been defined then make a leaf node for it.
+    // TODO: Add structural type test.
+    if ((id = findglob(Text)) == -1) {
+        fatals("Undeclared variable", Text);
+    }
+    right = mkastleaf(A_LVIDENT, Gsym[id].type, id);
+
+    // Ensure we have an equals sign
+    match(T_ASSIGN, "=");
+
+    // Parse the following expression
+    left = binexpr(0);
+    // Ensure the two types are compatible.
+    left = modify_type(left, right->type, 0);
+    if (left == NULL) {
+        fatal("Incompatible expression in assignment");
+    }
+    // Make an assignment AST tree
+    tree = mkastnode(A_ASSIGN, P_INT, left, NULL, right, 0);
+    // Return the AST.
+    return tree;
+}
+
 // Parse an IF statement including
 // any optional ELSE clause
 // and return its AST
@@ -31,72 +82,6 @@ static struct ASTnode *if_statement(void) {
     }
     // Build and return the AST for this statement.
     return (mkastnode(A_IF, P_NONE, condAST, trueAST, falseAST, 0));
-}
-
-static struct ASTnode *print_statement(void) {
-    struct ASTnode *tree;
-    int lefttype, righttype;
-    int reg;
-
-    // Match a 'print' as the first token
-    match(T_PRINT, "print");
-
-    // Parse the following expression
-    tree = binexpr(0);
-    // Ensure the two types are compatible.
-    lefttype = P_INT;
-    righttype = tree->type;
-    if (!type_compatible(&lefttype, &righttype, 0)) {
-        fatal("Incompatible types");
-    }
-    // Widen the tree if required.
-    if (righttype) {
-        tree = mkastunary(righttype, P_INT, tree, 0);
-    }
-    // Make an print AST tree
-    tree = mkastunary(A_PRINT, P_NONE, tree, 0);
-    // Return the AST.
-    return (tree);
-}
-
-static struct ASTnode *assignment_statement(void) {
-    struct ASTnode *left, *right, *tree;
-    int lefttype, righttype;
-    int id;
-
-    // Ensure we have an identifier
-    ident();
-
-    // Check if it is function call.
-    if (Token.token == T_LPAREN) {
-        return (funccall());
-    }
-    // Not a function call, on with an assignment then!
-    // Check the identifier has been defined then make a leaf node for it.
-    // TODO: Add structural type test.
-    if ((id = findglob(Text)) == -1) {
-        fatals("Undeclared variable", Text);
-    }
-    right = mkastleaf(A_LVIDENT, Gsym[id].type, id);
-
-    // Ensure we have an equals sign
-    match(T_ASSIGN, "=");
-    // Parse the following expression
-    left = binexpr(0);
-    // Ensure the two types are compatible.
-    lefttype = left->type;
-    righttype = right->type;
-    if (!type_compatible(&lefttype, &righttype, 1)) {
-        fatal("Incompatible types");
-    }
-    // Widen the left if required.
-    if (lefttype) {
-        left = mkastunary(lefttype, right->type, left, 0);
-    }
-    // Make an assignment AST tree
-    tree = mkastnode(A_ASSIGN, P_INT, left, NULL, right, 0);
-    // Return the AST.
-    return tree;
 }
 
 // Parse a FOR statement
@@ -159,7 +144,6 @@ struct ASTnode *while_statement(void) {
 // Parse a return statement and return its AST.
 static struct ASTnode *return_statement(void) {
     struct ASTnode *tree;
-    int returntype, functype;
     // Can't return a value if function return P_VOID.
     if (Gsym[Functionid].type == P_VOID) {
         fatal("Can't return from a void function");
@@ -170,14 +154,9 @@ static struct ASTnode *return_statement(void) {
     // Parse the following expression.
     tree = binexpr(0);
     // Ensure this is compatible with the function's type.
-    returntype = tree->type;
-    functype = Gsym[Functionid].type;
-    if (!type_compatible(&returntype, &functype, 1)) {
-        fatal("Incompatible types");
-    }
-    // Widen the left if required.
-    if (returntype) {
-        tree = mkastunary(returntype, functype, tree, 0);
+    tree = modify_type(tree, Gsym[Functionid].type, 0);
+    if (tree == NULL) {
+        fatal("Incompatible type to return");
     }
     // Add on the A_RETURN node.
     tree = mkastunary(A_RETURN, P_NONE, tree, 0);

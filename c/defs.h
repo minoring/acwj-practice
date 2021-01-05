@@ -38,7 +38,7 @@ enum {
     A_INTLIT,
     A_IDENT, A_LVIDENT, A_ASSIGN,
     A_PRINT, A_GLUE, A_IF, A_WHILE, A_FUNCTION, A_WIDEN,
-    A_RETURN, A_FUNCCALL, A_DEREF, A_ADDR
+    A_RETURN, A_FUNCCALL, A_DEREF, A_ADDR, A_SCALE
 };
 
 // Primitive types
@@ -49,15 +49,16 @@ enum {
 
 // Abstract Syntax Tree structure
 struct ASTnode {
-    int op; // "Operation" to be performed on this tree
-    int type; // Type of any expression this tree generates.
+    int op;               // "Operation" to be performed on this tree
+    int type;             // Type of any expression this tree generates.
     struct ASTnode *left; // Left and right child trees
     struct ASTnode *mid;
     struct ASTnode *right;
-    union {
-        int intvalue; // For A_INTLIT, the integer value
-        int id; // For A_IDENT, the symbol slot number
-    } v;
+    union {               // For A_INTLIT, the integer value.
+        int intvalue;     // For A_IDENT, the symbol slot number.
+        int id;           // For A_FUNCTION, the symbol slot number.
+        int size;         // For A_SCALE, the size of scale by.
+    } v;                  // For A_FUNCCALL, the symbol slot number.
 };
 
 #define NOREG -1 // Use NOREG when the AST generation
