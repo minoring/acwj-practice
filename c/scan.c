@@ -111,9 +111,9 @@ static int keyword(char *s) {
             return (T_INT);
         }
         break;
-    case 'p':
-        if (!strcmp(s, "print")) {
-            return (T_PRINT);
+    case 'l':
+        if (!strcmp(s, "long")) {
+            return (T_LONG);
         }
         break;
     case 'r':
@@ -192,9 +192,6 @@ int scan(struct token *t) {
         break;
     case ')':
         t->token = T_RPAREN;
-        break;
-    case ',':
-        t->token = T_COMMA;
         break;
     case '=':
         if ((c = next()) == '=') {

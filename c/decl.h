@@ -7,10 +7,11 @@ struct ASTnode *mkastnode(int op, int type, struct ASTnode *left, struct ASTnode
 			  struct ASTnode *right, int intvalue);
 struct ASTnode *mkastleaf(int op, int type, int intvalue);
 struct ASTnode *mkastunary(int op, int type, struct ASTnode *left, int intvalue);
+void dumpAST(struct ASTnode *n, int label, int parentAST);
 
 // gen.c
 int genlabel(void);
-int genAST(struct ASTnode *n, int reg, int parentASTop);
+int genAST(struct ASTnode *n, int label, int parentASTop);
 void genpreamble();
 void genpostamble();
 void genfreeregs();
@@ -40,9 +41,11 @@ int cgcompare_and_jump(int ASTop, int r1, int r2, int label);
 void cglabel(int l);
 void cgjump(int l);
 int cgwiden(int r, int oldtype, int newtype);
+int cgprimsize(int type);
 void cgreturn(int reg, int id);
 int cgaddress(int id);
 int cgderef(int r, int type);
+int cgstorderef(int r1, int r2, int type);
 
 // expr.c
 struct ASTnode *funccall(void);
@@ -74,6 +77,7 @@ struct ASTnode *function_declaration(int type);
 void global_declarations(void);
 
 // types.c
+int parse_type(void);
 int pointer_to(int type);
 int value_at(int type);
 struct ASTnode *modify_type(struct ASTnode *tree, int rtype, int op);

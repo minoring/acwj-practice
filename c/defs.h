@@ -6,10 +6,11 @@
 #define TEXTLEN 512 // Length of symbols in input
 #define NSYMBOLS 1024 // Number of symbol table entries
 
-// Tokens
+// Token types
 enum {
     T_EOF,
     // Operators
+    T_ASSIGN,
     T_PLUS, T_MINUS,
     T_STAR, T_SLASH,
     T_EQ, T_NE,
@@ -17,10 +18,11 @@ enum {
     // Type keywords
     T_VOID, T_CHAR, T_INT, T_LONG,
     // Structural tokens
-    T_INTLIT, T_SEMI, T_ASSIGN, T_IDENT,
+    T_INTLIT, T_SEMI, T_IDENT,
     T_LBRACE, T_RBRACE, T_LPAREN, T_RPAREN,
     T_AMPER, T_LOGAND, T_COMMA,
-    T_PRINT, T_IF, T_ELSE, T_WHILE, T_FOR, T_RETURN
+    // Other keywords
+    T_IF, T_ELSE, T_WHILE, T_FOR, T_RETURN
 };
 
 // Token structure
@@ -29,16 +31,14 @@ struct token {
     int intvalue;
 };
 
-// AST node types
+// AST node types. The first few line up
+// with the related tokens
 enum {
-    A_ADD=1, A_SUBTRACT,
-    A_MULTIPLY, A_DIVIDE,
-    A_EQ, A_NE,
-    A_LT, A_GT, A_LE, A_GE,
-    A_INTLIT,
-    A_IDENT, A_LVIDENT, A_ASSIGN,
-    A_PRINT, A_GLUE, A_IF, A_WHILE, A_FUNCTION, A_WIDEN,
-    A_RETURN, A_FUNCCALL, A_DEREF, A_ADDR, A_SCALE
+  A_ASSIGN= 1, A_ADD, A_SUBTRACT, A_MULTIPLY, A_DIVIDE,
+  A_EQ, A_NE, A_LT, A_GT, A_LE, A_GE,
+  A_INTLIT, A_IDENT, A_GLUE,
+  A_IF, A_WHILE, A_FUNCTION, A_WIDEN, A_RETURN,
+  A_FUNCCALL, A_DEREF, A_ADDR, A_SCALE
 };
 
 // Primitive types
@@ -51,6 +51,7 @@ enum {
 struct ASTnode {
     int op;               // "Operation" to be performed on this tree
     int type;             // Type of any expression this tree generates.
+    int rvalue;           // True if the node is an rvalue.
     struct ASTnode *left; // Left and right child trees
     struct ASTnode *mid;
     struct ASTnode *right;
@@ -61,8 +62,11 @@ struct ASTnode {
     } v;                  // For A_FUNCCALL, the symbol slot number.
 };
 
-#define NOREG -1 // Use NOREG when the AST generation
-                 // functions have no register to return.
+#define NOREG -1  // Use NOREG when the AST generation
+                  // functions have no register to return.
+#define NOLABEL 0 // Use NOLABEL when we have no albel to
+                  // pass to genAST()
+
 
 // Structural types
 enum {

@@ -5,7 +5,7 @@
 // Parse a function call with a single expression
 // argument and return its AST.
 struct ASTnode *funccall(void) {
-    struct AST *tree;
+    struct ASTnode *tree;
     int id;
     // Check that the identifier has been defined,
     // then make a leaf node for it.
@@ -77,14 +77,23 @@ static int arithop(int tokentype) {
     fatald("Syntax error, token", tokentype);
 }
 
+// Return true if a token is right-associative,
+// false otherwise.
+static int rightassoc(int tokentype) {
+    if (tokentype == T_ASSIGN) {
+        return (1);
+    }
+    return (0);
+}
+
 // Operator precedence for each token. Must
 // match up with the order of tokens in defs.h
 static int OpPrec[] = {
-    0,              // T_EOF,
-    10, 10,         // T_PLUS, T_MINUS
-    20, 20,         // T_STAR, T_SLASH
-    30, 30,         // T_EQ, T_NE
-    40, 40, 40, 40, // T_LT, T_GT, T_LE, T_GE
+    0, 10,			// T_EOF,  T_ASSIGN
+    20, 20,			// T_PLUS, T_MINUS
+    30, 30,			// T_STAR, T_SLASH
+    40, 40,			// T_EQ, T_NE
+    50, 50, 50, 50  // T_LT, T_GT, T_LE, T_GE
 };
 
 // Check that we have a binary operator and
@@ -148,11 +157,14 @@ struct ASTnode *binexpr(int ptp) {
     // If we hit a semicolon or ')', return just the left node
     tokentype = Token.token;
     if (tokentype == T_SEMI || tokentype == T_RPAREN) {
+        left->rvalue = 1;
         return (left);
     }
-    // While the precedence of this token is
-    // more than that of the previous token precedence
-    while (op_precedence(tokentype) > ptp) {
+    // While the precedence of this token is more than that of the
+    // previous token precedence, or it's right associative and
+    // equal to the previous token's precedence.
+    while (op_precedence(tokentype) > ptp ||
+           (rightassoc(tokentype) && op_precedence(tokentype) == ptp)) {
         // Fetch in the next integer literal
         scan(&Token);
 
@@ -160,19 +172,42 @@ struct ASTnode *binexpr(int ptp) {
         // precedence of our token to build a sub-tree
         right = binexpr(OpPrec[tokentype]);
 
-        // Ensure the two types are compatible by trying
-        // to modify each tree to match the other's type.
+        // Determine the operation to be performed on the sub-trees.
         ASTop = arithop(tokentype);
-        ltemp = modify_type(left, right->type, ASTop);
-        rtemp = modify_type(right, left->type, ASTop);
-        if (ltemp == NULL && rtemp == NULL) {
-            fatal("Incompatible types in binary expression");
-        }
-        if (ltemp != NULL) {
-            left = ltemp;
-        }
-        if (rtemp != NULL) {
-            right = rtemp;
+
+        if (ASTop == A_ASSIGN) {
+            // Assignment.
+            // Make the right tree into an rvalue.
+            right->rvalue = 1;
+            // Ensure the right's type matches the left.
+            right = modify_type(right, left->type, 0);
+            if (left == NULL) {
+                fatal("Incompatible expression in assignment");
+            }
+            // Make an assignment AST. However, switch
+            // left and right around, so that the right expression's
+            // code will be generated before the left expression.
+            ltemp = left;
+            left = right;
+            right = ltemp;
+        } else {
+            // We are not doing an assignment, so both trees should be rvalues.
+            // Convert both trees into rvalue if they are lvalue trees.
+            left->rvalue = 1;
+            right->rvalue = 1;
+            // Ensure the two types are compatible by trying
+            // to modify each tree to match the other's type.
+            ltemp = modify_type(left, right->type, ASTop);
+            rtemp = modify_type(right, left->type, ASTop);
+            if (ltemp == NULL && rtemp == NULL) {
+                fatal("Incompatible types in binary expression");
+            }
+            if (ltemp != NULL) {
+                left = ltemp;
+            }
+            if (rtemp != NULL) {
+                right = rtemp;
+            }
         }
         // Join that sub-tree with ours. Convert the token
         // into an AST operation at the same time.
@@ -186,5 +221,6 @@ struct ASTnode *binexpr(int ptp) {
     }
     // Return the tree we have when the precedence
     // is the same or lower
+    left->rvalue = 1;
     return (left);
 }
