@@ -1,6 +1,12 @@
 ## BNF Grammar
 
 ```
+primary_expression:
+       identifier
+     | constant
+     | '(' expression ')'
+     ;
+
 expression: additive_expression
      ;
 
@@ -21,6 +27,11 @@ prefix_expression: primary
      | '&' prefix_expression
      ;
 
+postfix_expression:
+       primary_expression
+     | postfix_expression '[' T_INTLIT ']'
+     ;
+
 number: T_INTLIT
      ;
 
@@ -36,7 +47,7 @@ statement: print_statement
 print_statement: 'print' expression ';'
      ;
 
-assignment_statement: identifier '=' expression ';'
+assignment_statement: opt_pointer identifier '=' expression ';'
      ;
 
 if_statement: if_head
@@ -85,6 +96,7 @@ function_declaration: type identifier '(' ')' compound_statement
      ;
 
 var_declaration: type identifier_list ';'
+     | type identifier '[' P_INTLIT ']' ';'
      ;
 
 type: type_keyword opt_pointer

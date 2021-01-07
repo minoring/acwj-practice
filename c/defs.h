@@ -20,6 +20,7 @@ enum {
     // Structural tokens
     T_INTLIT, T_SEMI, T_IDENT,
     T_LBRACE, T_RBRACE, T_LPAREN, T_RPAREN,
+    T_LBRACKET, T_RBRACKET,
     T_AMPER, T_LOGAND, T_COMMA,
     // Other keywords
     T_IF, T_ELSE, T_WHILE, T_FOR, T_RETURN
@@ -70,13 +71,14 @@ struct ASTnode {
 
 // Structural types
 enum {
-    S_VARIABLE, S_FUNCTION
+    S_VARIABLE, S_FUNCTION, S_ARRAY
 };
 
 // Symbol table structure
 struct symtable {
-    char *name; // Name of a symbol.
-    int type;   // Primitive type for the symbol.
-    int stype;  // Structural type for the symbol.
-    int endlabel; // For S_FUNCTIONs, the end label.
+    char *name;    // Name of a symbol.
+    int type;      // Primitive type for the symbol.
+    int stype;     // Structural type for the symbol.
+    int endlabel;  // For S_FUNCTIONs, the end label.
+    int size;      // Number of elements in the symbol.
 };

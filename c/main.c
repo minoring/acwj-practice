@@ -42,12 +42,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (argc != 2) {
+    // Ensure we have an input file argument.
+    if (i >= argc) {
         usage(argv[0]);
     }
 
 
-    if ((Infile = fopen(argv[1], "r")) == NULL) {
+    if ((Infile = fopen(argv[i], "r")) == NULL) {
         fprintf(stderr, "Unable to open %s: %s\n", argv[1], strerror(errno));
         exit(1);
     }
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]) {
     }
 
     // For now, ensure that void printint() is defined.
-    addglob("printint", P_CHAR, S_FUNCTION, 0);
+    addglob("printint", P_CHAR, S_FUNCTION, 0, 0);
 
     scan(&Token); // Get the first token from the input
     genpreamble();

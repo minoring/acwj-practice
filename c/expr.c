@@ -26,6 +26,38 @@ struct ASTnode *funccall(void) {
     return (tree);
 }
 
+// Parse the index into an array and
+// return an AST for it.
+static struct ASTnode *array_access(void) {
+    struct ASTnode *left, *right;
+    int id;
+    // Check that the identifier has been defined as an array
+    // then make a leaf node for it that points at the base.
+    if ((id = findglob(Text)) == -1 || Gsym[id].stype != S_ARRAY) {
+        fatals("Undeclared array", Text);
+    }
+    left = mkastleaf(A_ADDR, Gsym[id].type, id);
+    // Get the '['
+    scan(&Token);
+    // Parse the following expression.
+    right = binexpr(0);
+    // Get the ']'
+    match(T_RBRACKET, "]");
+
+    // Ensure that this is of int type.
+    if (!inttype(right->type)) {
+        fatal("Array index is not of integer type");
+    }
+    // Scale the index by the size of the element's type.
+    right = modify_type(right, left->type, A_ADD);
+    // Return an AST tree where the array's base has the offset
+    // added to it, and dereference the element.
+    // Still an lvalue at this point.
+    left = mkastnode(A_ADD, Gsym[id].type, left, NULL, right, 0);
+    left = mkastunary(A_DEREF, value_at(left->type), left, 0);
+    return (left);
+}
+
 // Parse a primary factor and return an
 // AST node representing it.
 static struct ASTnode *primary(void) {
@@ -50,7 +82,11 @@ static struct ASTnode *primary(void) {
         if (Token.token == T_LPAREN) {
             return (funccall());
         }
-        // Not a function call, so reject the new token.
+        // It's a '[', so an array reference.
+        if (Token.token == T_LBRACKET) {
+            return (array_access());
+        }
+        // Not a function call or array reference, so reject the new token.
         reject_token(&Token);
 
         // Check that this identifier exists.
@@ -61,8 +97,15 @@ static struct ASTnode *primary(void) {
         // Make a leaf AST node for it.
         n = mkastleaf(A_IDENT, Gsym[id].type, id);
         break;
+    case T_LPAREN:
+        // Beginning of a parenthesised expression, skip the '('.
+        // Scan in the expression and the right parenthesis.
+        scan(&Token);
+        n = binexpr(0);
+        rparen();
+        return (n);
     default:
-        fatald("Syntax error, token", Token.token);
+        fatald("Expecting a primary expression, got token", Token.token);
     }
     scan(&Token);
     return (n);
@@ -99,7 +142,11 @@ static int OpPrec[] = {
 // Check that we have a binary operator and
 // return its precedence.
 static int op_precedence(int tokentype) {
-    int prec = OpPrec[tokentype];
+    int prec;
+    if (tokentype >= T_VOID) {
+        fatald("Token with no precedence in op_precedence:", tokentype);
+    }
+    prec = OpPrec[tokentype];
     if (prec == 0) {
         fatald("Syntax error, token", tokentype);
     }
@@ -156,7 +203,8 @@ struct ASTnode *binexpr(int ptp) {
     left = prefix();
     // If we hit a semicolon or ')', return just the left node
     tokentype = Token.token;
-    if (tokentype == T_SEMI || tokentype == T_RPAREN) {
+    if (tokentype == T_SEMI || tokentype == T_RPAREN ||
+        tokentype == T_RBRACKET) {
         left->rvalue = 1;
         return (left);
     }
@@ -215,7 +263,8 @@ struct ASTnode *binexpr(int ptp) {
         // Update the details of the current token.
         // If we hit a semicolon or ')', return just the left node
         tokentype = Token.token;
-        if (tokentype == T_SEMI || tokentype == T_RPAREN) {
+        if (tokentype == T_SEMI || tokentype == T_RPAREN ||
+            tokentype == T_RBRACKET) {
             return (left);
         }
     }
