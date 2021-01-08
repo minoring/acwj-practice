@@ -141,6 +141,8 @@ int genAST(struct ASTnode *n, int label, int parentASTop) {
         }
     case A_INTLIT:
         return (cgloadint(n->v.intvalue, n->type));
+    case A_STRLIT:
+        return (cgloadglobstr(n->v.id));
     case A_IDENT:
         // Load our value if we are an rvalue
         // or we are being dereferenced.
@@ -204,5 +206,11 @@ void genfreeregs() { freeall_registers(); }
 void genprintint(int reg) { cgprintint(reg); }
 
 void genglobsym(int id) { cgglobsym(id); }
+
+int genglobstr(char *strvalue) {
+    int l = genlabel();
+    cgglobstr(l, strvalue);
+    return (l);
+}
 
 int genprimsize(int type) { return (cgprimsize(type)); }

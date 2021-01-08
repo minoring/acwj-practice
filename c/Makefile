@@ -11,6 +11,6 @@ clean:
 test: comp1 tests/runtests.sh
 		(cd tests; chmod +x runtests.sh; ./runtests.sh)
 
-test20: comp1 tests/input20.c lib/printint.c
-	./comp1 tests/input20.c
+test21: comp1 tests/input21.c lib/printint.c
+	./comp1 tests/input21.c
 
