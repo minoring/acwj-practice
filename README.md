@@ -4,6 +4,7 @@
 primary_expression:
        identifier
      | constant
+     | string_literal
      | '(' expression ')'
      ;
 
