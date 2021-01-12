@@ -58,6 +58,46 @@ static struct ASTnode *array_access(void) {
     return (left);
 }
 
+// Parse a postfix expression and return
+// an AST node representing it. The
+// identifier is already in Text.
+static struct ASTnode *postfix(void) {
+    struct ASTnode *n;
+    int id;
+    // Scan in the next token to see if we have a postfix expression.
+    scan(&Token);
+
+    // Function call.
+    if (Token.token == T_LPAREN) {
+        return (funccall());
+    }
+
+    // An array reference.
+    if (Token.token == T_LBRACKET) {
+        return (array_access());
+    }
+
+    // A variable. Check that the variable exists.
+    id = findglob(Text);
+    if (id == -1 || Gsym[id].stype != S_VARIABLE) {
+        fatals("Unknown variable", Text);
+    }
+
+    switch (Token.token) {
+    case T_INC:
+        scan(&Token);
+        n = mkastleaf(A_POSTINC, Gsym[id].type, id);
+        break;
+    case T_DEC:
+        scan(&Token);
+        n = mkastleaf(A_POSTDEC, Gsym[id].type, id);
+        break;
+    default:
+        n = mkastleaf(A_IDENT, Gsym[id].type, id);
+    }
+    return (n);
+}
+
 // Parse a primary factor and return an
 // AST node representing it.
 static struct ASTnode *primary(void) {
@@ -81,28 +121,7 @@ static struct ASTnode *primary(void) {
         n = mkastleaf(A_STRLIT, P_CHARPTR, id);
         break;
     case T_IDENT:
-        // This could be a variable or a function call.
-        // Scan in the next token to find out.
-        scan(&Token);
-        // If's a '(', so a function call.
-        if (Token.token == T_LPAREN) {
-            return (funccall());
-        }
-        // It's a '[', so an array reference.
-        if (Token.token == T_LBRACKET) {
-            return (array_access());
-        }
-        // Not a function call or array reference, so reject the new token.
-        reject_token(&Token);
-
-        // Check that this identifier exists.
-        id = findglob(Text);
-        if (id == -1) {
-            fatals("Unknown variable", Text);
-        }
-        // Make a leaf AST node for it.
-        n = mkastleaf(A_IDENT, Gsym[id].type, id);
-        break;
+        return (postfix());
     case T_LPAREN:
         // Beginning of a parenthesised expression, skip the '('.
         // Scan in the expression and the right parenthesis.
@@ -138,11 +157,13 @@ static int rightassoc(int tokentype) {
 // Operator precedence for each token. Must
 // match up with the order of tokens in defs.h
 static int OpPrec[] = {
-    0, 10,			// T_EOF,  T_ASSIGN
-    20, 20,			// T_PLUS, T_MINUS
-    30, 30,			// T_STAR, T_SLASH
-    40, 40,			// T_EQ, T_NE
-    50, 50, 50, 50  // T_LT, T_GT, T_LE, T_GE
+    0, 10, 20, 30,  // T_EOF, T_ASSIGN, T_LOGOR, T_LOGAND
+    40, 50, 60,     // T_OR, T_XOR, T_AMPER
+    70, 70,         // T_EQ, T_NE
+    80, 80, 80, 80, // T_LT, T_GT, T_LE, T_GE
+    90, 90,         // T_LSHIFT, T_RSHIFT
+    100, 100,       // T_PLUS, T_MINUS
+    110, 110        // T_STAR, T_SLASH
 };
 
 // Check that we have a binary operator and
@@ -165,11 +186,9 @@ struct ASTnode *prefix(void) {
     struct ASTnode *tree;
     switch (Token.token) {
     case T_AMPER:
-        // Get the next token and parse it
-        // recursively as a prefix expression.
         scan(&Token);
         tree = prefix();
-        // Ensure that it's an identifier.
+
         if (tree->op != A_IDENT) {
             fatal("& operator must be followed by an identifier");
         }
@@ -179,8 +198,6 @@ struct ASTnode *prefix(void) {
         tree->type = pointer_to(tree->type);
         break;
     case T_STAR:
-        // Get the next token and parse it
-        // recursively as a prefix expression.
         scan(&Token);
         tree = prefix();
         // For now, ensure it's either another deref or an
@@ -190,6 +207,47 @@ struct ASTnode *prefix(void) {
         }
         // Prepend an A_DEREF operation to the tree
         tree = mkastunary(A_DEREF, value_at(tree->type), tree, 0);
+        break;
+    case T_MINUS:
+        scan(&Token);
+        tree = prefix();
+
+        // Since char are unsigned, widen this to int so that it's signed.
+        tree->rvalue = 1;
+        tree = modify_type(tree, P_INT, 0);
+        tree = mkastunary(A_NEGATE, tree->type, tree, 0);
+        break;
+    case T_INVERT:
+        scan(&Token);
+        tree = prefix();
+
+        tree->rvalue = 1;
+        tree = mkastunary(A_INVERT, tree->type, tree, 0);
+        break;
+    case T_LOGNOT:
+        scan(&Token);
+        tree = prefix();
+
+        tree->rvalue = 1;
+        tree = mkastunary(A_LOGNOT, tree->type, tree, 0);
+        break;
+    case T_INC:
+        scan(&Token);
+        tree = prefix();
+
+        if (tree->op != A_IDENT) {
+            fatal("++ operator must be followed by an identifier");
+        }
+        tree = mkastunary(A_PREINC, tree->type, tree, 0);
+        break;
+    case T_DEC:
+        scan(&Token);
+        tree = prefix();
+
+        if (tree->op != A_IDENT) {
+            fatal("-- operator must be followed by an identifier");
+        }
+        tree = mkastunary(A_PREDEC, tree->type, tree, 0);
         break;
     default:
         tree = primary();
@@ -209,8 +267,8 @@ struct ASTnode *binexpr(int ptp) {
     left = prefix();
     // If we hit a semicolon or ')', return just the left node
     tokentype = Token.token;
-    if (tokentype == T_SEMI || tokentype == T_RPAREN ||
-        tokentype == T_RBRACKET) {
+    if (tokentype == T_SEMI || tokentype == T_RPAREN
+    ) {
         left->rvalue = 1;
         return (left);
     }
@@ -269,8 +327,8 @@ struct ASTnode *binexpr(int ptp) {
         // Update the details of the current token.
         // If we hit a semicolon or ')', return just the left node
         tokentype = Token.token;
-        if (tokentype == T_SEMI || tokentype == T_RPAREN ||
-            tokentype == T_RBRACKET) {
+        if (tokentype == T_SEMI || tokentype == T_RPAREN
+        ) {
             return (left);
         }
     }

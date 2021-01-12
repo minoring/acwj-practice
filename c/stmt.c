@@ -20,7 +20,7 @@ static struct ASTnode *if_statement(void) {
     condAST = binexpr(0);
 
     if (condAST->op < A_EQ || condAST->op > A_GE) {
-        fatal("Bad comparison operator");
+        condAST = mkastunary(A_TOBOOL, condAST->type, condAST, 0);
     }
     rparen();
     // Get the AST for the compound statement
@@ -49,7 +49,7 @@ static struct ASTnode *for_statement(void) {
     // Get the condition and the ';'
     condAST = binexpr(0);
     if (condAST->op < A_EQ || condAST->op > A_GE) {
-        fatal("Bad comparison operator");
+        condAST = mkastunary(A_TOBOOL, condAST->type, condAST, 0);
     }
     semi();
     // Get the post_op statement and the ')'
@@ -81,7 +81,7 @@ struct ASTnode *while_statement(void) {
     // the tree's operation is a comparison.
     condAST = binexpr(0);
     if (condAST->op < A_EQ || condAST->op > A_GE) {
-        fatal("Bad comparison operator");
+        condAST = mkastunary(A_TOBOOL, condAST->type, condAST, 0);
     }
     rparen();
     // Get the AST for the compound statement.

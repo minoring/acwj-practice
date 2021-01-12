@@ -8,9 +8,9 @@ comp1: $(SRCS) $(DEPS)
 clean:
 	rm -f comp1 *.o *.s out
 
-test: comp1 tests/runtests.sh
-		(cd tests; chmod +x runtests.sh; ./runtests.sh)
+# test: comp1 tests/runtests
+# 	(cd tests; chmod +x runtests; ./runtests)
 
-test21: comp1 tests/input21.c lib/printint.c
-	./comp1 tests/input21.c
+t: comp1 tests/input$(N).c lib/printint.c
+	./comp1 tests/input$(N).c
 
