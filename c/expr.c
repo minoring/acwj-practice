@@ -9,10 +9,10 @@ struct ASTnode *funccall(void) {
     int id;
     // Check that the identifier has been defined,
     // then make a leaf node for it.
-    // TODO: Add structural type test.
-    if ((id = findglob(Text)) == -1) {
+    if ((id = findsymbol(Text)) == -1 || Symtable[id].stype != S_FUNCTION) {
         fatals("Undeclared function", Text);
     }
+
     // Get the '('
     lparen();
     // Parse the following expression
@@ -20,7 +20,7 @@ struct ASTnode *funccall(void) {
     // Build the function call AST node. Store the
     // function's return type as this node's type.
     // Also record the function's symbol-id.
-    tree = mkastunary(A_FUNCCALL, Gsym[id].type, tree, id);
+    tree = mkastunary(A_FUNCCALL, Symtable[id].type, tree, id);
     // Get the ')'
     rparen();
     return (tree);
@@ -33,10 +33,10 @@ static struct ASTnode *array_access(void) {
     int id;
     // Check that the identifier has been defined as an array
     // then make a leaf node for it that points at the base.
-    if ((id = findglob(Text)) == -1 || Gsym[id].stype != S_ARRAY) {
+    if ((id = findsymbol(Text)) == -1 || Symtable[id].stype != S_ARRAY) {
         fatals("Undeclared array", Text);
     }
-    left = mkastleaf(A_ADDR, Gsym[id].type, id);
+    left = mkastleaf(A_ADDR, Symtable[id].type, id);
     // Get the '['
     scan(&Token);
     // Parse the following expression.
@@ -53,7 +53,7 @@ static struct ASTnode *array_access(void) {
     // Return an AST tree where the array's base has the offset
     // added to it, and dereference the element.
     // Still an lvalue at this point.
-    left = mkastnode(A_ADD, Gsym[id].type, left, NULL, right, 0);
+    left = mkastnode(A_ADD, Symtable[id].type, left, NULL, right, 0);
     left = mkastunary(A_DEREF, value_at(left->type), left, 0);
     return (left);
 }
@@ -78,22 +78,22 @@ static struct ASTnode *postfix(void) {
     }
 
     // A variable. Check that the variable exists.
-    id = findglob(Text);
-    if (id == -1 || Gsym[id].stype != S_VARIABLE) {
+    id = findsymbol(Text);
+    if (id == -1 || Symtable[id].stype != S_VARIABLE) {
         fatals("Unknown variable", Text);
     }
 
     switch (Token.token) {
     case T_INC:
         scan(&Token);
-        n = mkastleaf(A_POSTINC, Gsym[id].type, id);
+        n = mkastleaf(A_POSTINC, Symtable[id].type, id);
         break;
     case T_DEC:
         scan(&Token);
-        n = mkastleaf(A_POSTDEC, Gsym[id].type, id);
+        n = mkastleaf(A_POSTDEC, Symtable[id].type, id);
         break;
     default:
-        n = mkastleaf(A_IDENT, Gsym[id].type, id);
+        n = mkastleaf(A_IDENT, Symtable[id].type, id);
     }
     return (n);
 }

@@ -10,6 +10,7 @@ static void init() {
     Line = 1;
     Putback = '\n';
     Globs = 0;
+    Locls = NSYMBOLS - 1;
     O_dumpAST = 0;
 }
 

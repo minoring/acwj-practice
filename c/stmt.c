@@ -94,7 +94,7 @@ struct ASTnode *while_statement(void) {
 static struct ASTnode *return_statement(void) {
     struct ASTnode *tree;
     // Can't return a value if function return P_VOID.
-    if (Gsym[Functionid].type == P_VOID) {
+    if (Symtable[Functionid].type == P_VOID) {
         fatal("Can't return from a void function");
     }
     // Ensure we have 'return' '('
@@ -103,7 +103,7 @@ static struct ASTnode *return_statement(void) {
     // Parse the following expression.
     tree = binexpr(0);
     // Ensure this is compatible with the function's type.
-    tree = modify_type(tree, Gsym[Functionid].type, 0);
+    tree = modify_type(tree, Symtable[Functionid].type, 0);
     if (tree == NULL) {
         fatal("Incompatible type to return");
     }
@@ -129,7 +129,7 @@ static struct ASTnode *single_statement(void) {
         // TODO: These are globals at present.
         type = parse_type();
         ident();
-        var_declaration(type);
+        var_declaration(type, 1);
         return (NULL);
     case T_IF:
         return (if_statement());

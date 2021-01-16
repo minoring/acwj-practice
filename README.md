@@ -3,34 +3,48 @@
 ```
 primary_expression:
        identifier
-     | constant
-     | string_literal
+     | T_INTLIT
+     | T_STRLIT
      | '(' expression ')'
+     ;
+
+postfix_expression:
+       primary_expression
+     | postfix_expression '[' expression ']'
+     | postfix_expression '(' expression ')'
+     | postfix_expression '++'
+     | postfix_expression '--'
+     ;
+
+prefix_expression:
+       postfix_expression
+     | '++' prefix_expression
+     | '--' prefix_expression
+     | prefix_operator prefix_expression
+     ;
+
+prefix_operator:
+       '&'
+     | '*'
+     | '-'
+     | '~'
+     | '!'
      ;
 
 expression: additive_expression
      ;
 
-additive_expresion:
+additive_expression:
        multiplicative_expression
      | additive_expression '+' multiplicative_expression
      | additive_expression '-' multiplicative_expression
      ;
 
 multiplicative_expression:
-       number
-     | number '*' multiplicative_expression
-     | number '/' multiplicative_expression
-     ;
-
-prefix_expression: primary
-     | '*' prefix_expression
-     | '&' prefix_expression
-     ;
-
-postfix_expression:
-       primary_expression
-     | postfix_expression '[' T_INTLIT ']'
+       prefix_expression
+     | multiplicative_expression '*' prefix_expression
+     | multiplicative_expression '/' prefix_expression
+     | multiplicative_expression '%' prefix_expression
      ;
 
 number: T_INTLIT

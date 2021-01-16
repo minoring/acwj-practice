@@ -38,8 +38,7 @@ int parse_type(void) {
 
 // Parse the declaration of a list of variables.
 // The identifier has been scanned and we have type.
-void var_declaration(int type) {
-    int id;
+void var_declaration(int type, int islocal) {
     while (1) {
         // Text now has the identifier's name.
         // If the next token is a'['
@@ -50,8 +49,11 @@ void var_declaration(int type) {
             if (Token.token == T_INTLIT) {
                 // Add this as a known array and generate its space in assembly.
                 // We treat the array as a pointer to its elements' type.
-                id = addglob(Text, pointer_to(type), S_ARRAY, 0, Token.intvalue);
-                genglobsym(id);
+                if (islocal) {
+                    addlocl(Text, pointer_to(type), S_ARRAY, 0, Token.intvalue);
+                } else {
+                    addglob(Text, pointer_to(type), S_ARRAY, 0, Token.intvalue);
+                }
 
                 // Ensure we have a following ']'
                 scan(&Token);
@@ -61,10 +63,12 @@ void var_declaration(int type) {
             }
             // Ensure we have a f
         } else {
-            // Add this as a known scalar
-            // and generate its space in assembly.
-            id = addglob(Text, type, S_VARIABLE, 0, 1);
-            genglobsym(id);
+            // Add this as a known scalar.
+            if (islocal) {
+                addlocl(Text, type, S_VARIABLE, 0, 1);
+            } else {
+                addglob(Text, type, S_VARIABLE, 0, 1);
+            }
         }
         // If the next token is a semicolon,
         // skip it and return.
@@ -95,6 +99,8 @@ struct ASTnode *function_declaration(int type) {
     endlabel = genlabel();
     nameslot = addglob(Text, type, S_FUNCTION, endlabel, 0);
     Functionid = nameslot;
+
+    genresetlocals(); // Reset position of new locals.
 
     lparen();
     rparen();
@@ -141,7 +147,7 @@ void global_declarations(void) {
             genAST(tree, NOREG, 0);
         } else {
             // Parse the global variable declaration
-            var_declaration(type);
+            var_declaration(type, 0);
         }
         // Stop when we have reached EOF.
         if (Token.token == T_EOF) {
