@@ -36,61 +36,77 @@ int parse_type(void) {
     return (type);
 }
 
-// Parse the declaration of a list of variables.
-// The identifier has been scanned and we have type.
-void var_declaration(int type, int islocal) {
-    while (1) {
-        // Text now has the identifier's name.
-        // If the next token is a'['
-        if (Token.token == T_LBRACKET) {
-            // Skip past the '['
-            scan(&Token);
-            // Check we have an array size.
-            if (Token.token == T_INTLIT) {
-                // Add this as a known array and generate its space in assembly.
-                // We treat the array as a pointer to its elements' type.
-                if (islocal) {
-                    addlocl(Text, pointer_to(type), S_ARRAY, 0, Token.intvalue);
-                } else {
-                    addglob(Text, pointer_to(type), S_ARRAY, 0, Token.intvalue);
-                }
+// Parse the declaration a scalar variable or an array
+// with a given size.
+// The identifier has been scanned and we have the type.
+// islocal is set if this is a local variable.
+// isparam is set if this local variable is a function parameter.
+void var_declaration(int type, int islocal, int isparam) {
+    // Text now has the identifier's name.
+    // If the next token is a '['
+    if (Token.token == T_LBRACKET) {
+        // Skip past '['
+        scan(&Token);
 
-                // Ensure we have a following ']'
-                scan(&Token);
-                match(T_RBRACKET, "]");
-            } else {
-                fatal("var_declaration array with no size");
-            }
-            // Ensure we have a f
-        } else {
-            // Add this as a known scalar.
+        // Check we have an array size.
+        if (Token.token == T_INTLIT) {
+            // Add this as known array and generate its space in assembly.
+            // We treat the array as a pointer to its element's type.
             if (islocal) {
-                addlocl(Text, type, S_VARIABLE, 0, 1);
+                fatal("For now, declaration of local arrays is not implemented");
+            } else {
+                addglob(Text, pointer_to(type), S_ARRAY, 0, Token.intvalue);
+            }
+        }
+        // Ensure we have a following ']'
+        scan(&Token);
+        match(T_RBRACKET, "]");
+    } else {
+        if (islocal) {
+            if (addlocl(Text, type, S_VARIABLE, isparam, 1) == -1) {
+                fatals("Duplicate local variable declaration", Text);
             } else {
                 addglob(Text, type, S_VARIABLE, 0, 1);
             }
         }
-        // If the next token is a semicolon,
-        // skip it and return.
-        if (Token.token == T_SEMI) {
-            scan(&Token);
-            return;
-        }
-        // If the next token is a comma, skip it,
-        // get the identifier and loop back.
-        if (Token.token == T_COMMA) {
-            scan(&Token);
-            ident();
-            continue;
-        }
-        fatal("Missing, or ; after identifier");
     }
 }
 
-// Parse the declaration of a simplistic function
+// Parse the parameter in parentheses after the function name.
+// Add them as symbols to the symbol table and return the number
+// of parameters.
+static int param_declaration(void) {
+    int type;
+    int paramcnt = 0;
+
+    while (Token.token != T_RPAREN) {
+        // Get the type and identifier
+        // and add it to the symbol table.
+        type = parse_type();
+        ident();
+        var_declaration(type, 1, 1);
+        paramcnt++;
+
+        // Must have a ',' or ')' at this point.
+        switch(Token.token) {
+        case T_COMMA:
+            scan(&Token);
+            break;
+        case T_RPAREN:
+            break;
+        default:
+            fatald("Unexpected token in parameter list", Token.token);
+        }
+    }
+    return (paramcnt);
+}
+
+
+// Parse the declaration of a simplistic function.
+// The identifier has been scanned and we have the type.
 struct ASTnode *function_declaration(int type) {
     struct ASTnode *tree, *finalstmt;
-    int nameslot, endlabel;
+    int nameslot, endlabel, paramcnt;
 
     // Text now has the identifier's name.
     // Get a label-id for the end label, add the function
@@ -100,9 +116,13 @@ struct ASTnode *function_declaration(int type) {
     nameslot = addglob(Text, type, S_FUNCTION, endlabel, 0);
     Functionid = nameslot;
 
-    genresetlocals(); // Reset position of new locals.
-
+    // Scan in the parentheses and any parameters.
+    // Update the function symbol entry with the number of parameters.
     lparen();
+    paramcnt = param_declaration();
+    // Symtable[nameslot].nelems= paramcnt;
+    Symtable[nameslot].nelems= paramcnt;
+
     rparen();
     // Get the AST tree for the compound statement.
     tree = compound_statement();
@@ -145,9 +165,14 @@ void global_declarations(void) {
                 fprintf(stdout, "\n\n");
             }
             genAST(tree, NOREG, 0);
+
+            // Now free the symbol associated
+            // with this function.
+            freeloclsyms();
         } else {
             // Parse the global variable declaration
-            var_declaration(type, 0);
+            // and skip past the trailing semicolon.
+            var_declaration(type, 0, 0);
         }
         // Stop when we have reached EOF.
         if (Token.token == T_EOF) {
