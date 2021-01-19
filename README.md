@@ -47,6 +47,11 @@ multiplicative_expression:
      | multiplicative_expression '%' prefix_expression
      ;
 
+expression_list:
+       expression
+     | expression ',' expression_list
+     ;
+
 number: T_INTLIT
      ;
 

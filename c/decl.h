@@ -34,7 +34,8 @@ int cgsub(int r1, int r2);
 int cgmul(int r1, int r2);
 int cgdiv(int r1, int r2);
 int cgshlconst(int r, int val);
-int cgcall(int r, int id);
+int cgcall(int id, int numargs);
+void cgcopyarg(int r, int argposn);
 int cgstorglob(int r, int id);
 int cgstorlocal(int r, int id);
 void cgglobsym(int id);
@@ -60,7 +61,6 @@ int cgshl(int r1, int r2);
 int cgshr(int r1, int r2);
 
 // expr.c
-struct ASTnode *funccall(void);
 struct ASTnode *binexpr(int ptp);
 
 // stmt.c

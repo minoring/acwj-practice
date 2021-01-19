@@ -65,9 +65,9 @@ void var_declaration(int type, int islocal, int isparam) {
         if (islocal) {
             if (addlocl(Text, type, S_VARIABLE, isparam, 1) == -1) {
                 fatals("Duplicate local variable declaration", Text);
-            } else {
-                addglob(Text, type, S_VARIABLE, 0, 1);
             }
+        } else {
+            addglob(Text, type, S_VARIABLE, 0, 1);
         }
     }
 }
@@ -121,9 +121,9 @@ struct ASTnode *function_declaration(int type) {
     lparen();
     paramcnt = param_declaration();
     // Symtable[nameslot].nelems= paramcnt;
-    Symtable[nameslot].nelems= paramcnt;
-
+    Symtable[nameslot].nelems = paramcnt;
     rparen();
+
     // Get the AST tree for the compound statement.
     tree = compound_statement();
 
@@ -173,6 +173,7 @@ void global_declarations(void) {
             // Parse the global variable declaration
             // and skip past the trailing semicolon.
             var_declaration(type, 0, 0);
+            semi();
         }
         // Stop when we have reached EOF.
         if (Token.token == T_EOF) {
