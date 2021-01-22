@@ -223,7 +223,7 @@ int scan(struct token *t) {
         t->token = T_EOF;
         return (0);
     case '+':
-        if ((c = next() == '+')) {
+        if ((c = next()) == '+') {
             t->token = T_INC;
         } else {
             putback(c);
